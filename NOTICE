@@ -1,0 +1,9 @@
+OSWorld-Qwen2.5VL-Enhanced
+Copyright 2026 issumer-ku
+
+This project contains an independently packaged and enhanced Qwen2.5-VL
+adapter derived from integration work for OSWorld, which is licensed under
+the Apache License 2.0. Qwen model weights are not included.
+
+OSWorld: https://github.com/xlang-ai/OSWorld
+Qwen2.5-VL: https://github.com/QwenLM/Qwen2.5-VL

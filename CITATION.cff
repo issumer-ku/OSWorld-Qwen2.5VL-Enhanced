@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use this enhanced OSWorld adapter, please cite this repository and the upstream OSWorld and Qwen2.5-VL projects."
+title: "OSWorld Qwen2.5-VL Enhanced"
+type: software
+authors:
+  - name: "issumer-ku"
+version: 0.1.0
+date-released: 2026-08-12
+repository-code: "https://github.com/issumer-ku/OSWorld-Qwen2.5VL-Enhanced"
+license: Apache-2.0

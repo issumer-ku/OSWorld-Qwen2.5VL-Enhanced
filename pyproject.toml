@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "osworld-qwen25vl-enhanced"
+version = "0.1.0"
+description = "Provider-neutral enhanced Qwen2.5-VL agent and evaluation runner for OSWorld"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+authors = [{name = "issumer-ku"}]
+keywords = ["qwen2.5-vl", "osworld", "gui-agent", "vlm", "computer-use"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+  "openai>=1.70.0",
+  "pillow>=10.4.0",
+  "requests>=2.32.0",
+  "tiktoken>=0.8.0",
+]
+
+[project.optional-dependencies]
+dev = ["build>=1.2.2", "pytest>=8.3.0"]
+
+[project.urls]
+Homepage = "https://github.com/issumer-ku/OSWorld-Qwen2.5VL-Enhanced"
+Repository = "https://github.com/issumer-ku/OSWorld-Qwen2.5VL-Enhanced"
+Issues = "https://github.com/issumer-ku/OSWorld-Qwen2.5VL-Enhanced/issues"
+
+[project.scripts]
+osworld-qwen25vl = "osworld_qwen25vl.runner:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
