@@ -1,40 +1,63 @@
 # OSWorld Qwen2.5-VL Enhanced
 
-An independently packaged, provider-neutral Qwen2.5-VL computer-use agent for
-[OSWorld](https://github.com/xlang-ai/OSWorld). It preserves the enhanced adapter
-used in our experiments while keeping the OSWorld checkout and the model runtime
-replaceable.
+An independently packaged, OpenAI-compatible-runtime-flexible Qwen2.5-VL
+computer-use agent for [OSWorld](https://github.com/xlang-ai/OSWorld). It
+preserves the enhanced adapter used in our experiments while allowing the
+OSWorld checkout and model runtime to be managed separately.
 
-The repository contains no model weights and does not fork OSWorld. Point the
-runner at any compatible OSWorld checkout with `--osworld-root`, and point the
-agent at LM Studio, vLLM, or another OpenAI-compatible multimodal endpoint.
+This repository contains no model weights and does not vendor a full OSWorld
+checkout. The runner loads an external OSWorld installation through
+`--osworld-root`, while the agent connects to LM Studio, vLLM, or another
+OpenAI-compatible multimodal chat-completions endpoint.
+
+This is an independent research project, not an official OSWorld component.
+Parts of the adapter and evaluation helpers are derived from and modified from
+Apache-2.0-licensed OSWorld code; see [NOTICE](NOTICE).
 
 ## What is enhanced
 
-- grounded XML or native structured tool calls with strict action parsing
+- grounded XML and optional native structured tool calls with validated parsing
+  and bounded format recovery
 - relative/absolute coordinate normalization and provider convention detection
 - screenshot folding plus bounded multimodal and accessibility history
-- semantic loop detection, format recovery, and completion verification
+- semantic loop detection and completion verification
 - explicit model/adapter failure provenance instead of silently scoring failures
-- resumable multi-environment OSWorld evaluation with isolated result artifacts
+- resumable multi-environment OSWorld evaluation with per-task result artifacts
+- four observation modes: `screenshot`, `a11y_tree`,
+  `screenshot_a11y_tree`, and `som`
+
+## Requirements
+
+- Python 3.10 or later
+- a separately installed OSWorld checkout and the prerequisites for the selected
+  OSWorld provider, such as Docker, VMware, AWS, Azure, or VirtualBox
+- an OpenAI-compatible endpoint that accepts multimodal chat-completions requests
+  with image input
+- a Qwen2.5-VL model whose served model identifier is accepted by that endpoint
+
+Accessibility-tree and SOM observations also require a compatible OSWorld
+environment that returns `accessibility_tree` observations.
 
 ## Install
 
 ```bash
 git clone https://github.com/issumer-ku/OSWorld-Qwen2.5VL-Enhanced.git
 cd OSWorld-Qwen2.5VL-Enhanced
-python -m venv .venv
+python3.10 -m venv .venv
 source .venv/bin/activate
+python -m pip install -U pip
 pip install -e .
 ```
 
-Install OSWorld separately following its Docker provider instructions. The model
-server and OSWorld environments can be on different machines.
+Install OSWorld separately by following its setup guide and the instructions for
+the provider you intend to use. The model server and OSWorld environments may run
+on different machines as long as the evaluation host can reach the model endpoint.
 
 ## LM Studio / MLX
 
-Load the Qwen2.5-VL model in LM Studio, enable its OpenAI-compatible server, and
-allow enough parallel requests for the selected `--num_envs`. Then run:
+Load a Qwen2.5-VL model in LM Studio, enable its OpenAI-compatible server, and
+allow enough concurrent requests for the selected `--num_envs`. Use the exact
+model identifier returned by the server's `/v1/models` endpoint.
 
 ```bash
 osworld-qwen25vl \
@@ -50,9 +73,13 @@ osworld-qwen25vl \
   --result_dir ./results/qwen25vl-enhanced
 ```
 
-Start with a 1–3 task smoke manifest before the 369-task run. Increase
-`--num_envs` only after confirming the endpoint sustains that many simultaneous
-multimodal generations without malformed responses or severe latency growth.
+`test_nogdrive.json` contains 361 tasks and excludes eight Google Drive tasks.
+Use `test_all.json` with the required Google credentials and setup for the full
+369-task evaluation.
+
+Start with a one-to-three-task smoke manifest. Increase `--num_envs` only after
+confirming that the endpoint sustains the same number of simultaneous multimodal
+generations without malformed responses or severe latency growth.
 
 ## Research-lab server / vLLM
 
@@ -77,7 +104,10 @@ osworld-qwen25vl \
   --num_envs 2
 ```
 
-See [docs/evaluation.md](docs/evaluation.md) for the full comparison protocol and
+For authenticated remote endpoints, prefer setting `OPENAI_API_KEY` in the
+environment instead of placing a real key in a command-line argument.
+
+See [docs/evaluation.md](docs/evaluation.md) for the comparison protocol and
 [docs/runtime-switching.md](docs/runtime-switching.md) for endpoint guidance.
 
 ## Python API
@@ -94,15 +124,30 @@ agent = QwenAgent(
 )
 ```
 
+## OSWorld compatibility
+
+The runner uses OSWorld's `DesktopEnv` and provider interfaces from the checkout
+given by `--osworld-root`. Packaging and CLI integration were verified against an
+enhanced OSWorld checkout based on commit
+[`b7db4d8`](https://github.com/xlang-ai/OSWorld/commit/b7db4d8c85d9e95e0b1db44de5bec954cf37f0cf).
+Other revisions may work, but should be validated with a smoke test before a full
+evaluation.
+
 ## Reproducibility
 
-For a fair baseline comparison, keep the OSWorld commit, 369-task manifest,
-Docker image, screen size, maximum steps, decoding parameters, observation type,
-and environment concurrency fixed. Record model quantization and server version
-alongside each run. The runner writes redacted arguments, trajectories, recording,
-termination provenance, and evaluator results under the selected result directory.
+For a fair comparison, keep the following fixed and report them with the result:
 
-## Tests
+- OSWorld commit, task manifest, examples, evaluator, and environment image
+- model checkpoint, precision or quantization, and serving runtime version
+- screen size, maximum steps, reset/evaluation waits, and observation type
+- temperature, top-p, maximum output tokens, history limits, and tool mode
+- number of OSWorld environments and model-server concurrency
+
+The runner writes redacted arguments, trajectories, termination provenance,
+evaluator results, and recordings when the selected OSWorld environment supports
+recording. A task with `result.txt` is treated as complete when a run is resumed.
+
+## Tests and validation scope
 
 ```bash
 pip install -e '.[dev]'
@@ -110,8 +155,15 @@ pytest -q
 python -m build
 ```
 
+The automated tests validate parsing, coordinate handling, history management,
+all four observation payloads, and failure handling. CI also builds the package
+on Python 3.10 and 3.11. It does not launch a real OSWorld VM/container or model
+server. Validate each OSWorld/provider/model-server combination with a small
+end-to-end smoke run before starting a benchmark-scale evaluation.
+
 ## License and upstream projects
 
-Apache-2.0. This project does not redistribute Qwen model weights. Also review the
+Apache-2.0. This project does not redistribute Qwen model weights. Review the
 licenses and citation requirements of [OSWorld](https://github.com/xlang-ai/OSWorld)
-and [Qwen2.5-VL](https://github.com/QwenLM/Qwen2.5-VL).
+and [Qwen2.5-VL](https://github.com/QwenLM/Qwen2.5-VL) before redistribution or
+publication.
